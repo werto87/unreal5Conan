@@ -2,6 +2,7 @@
 
 using UnrealBuildTool;
 using System.Collections.Generic;
+using UnrealBuildBase;
 
 public class MyProject3EditorTarget : TargetRules
 {

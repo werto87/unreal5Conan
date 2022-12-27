@@ -2,7 +2,7 @@
 # *DO NOT EDIT*
 
 UNREALROOTPATH = /opt/unreal-engine
-GAMEPROJECTFILE =/home/walde/Documents/Unreal Projects/MyProject3/MyProject3.uproject
+GAMEPROJECTFILE =/home/walde/RiderProjects/unreal5ConanNew/MyProject3.uproject
 
 TARGETS = \
 	MyProject3-Linux-DebugGame  \
