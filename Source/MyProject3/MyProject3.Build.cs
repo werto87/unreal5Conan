@@ -18,7 +18,7 @@ public class MyProject3 : ModuleRules
         Type type = Target.GetType();
         FieldInfo innerField = type.GetField("Inner", BindingFlags.Instance | BindingFlags.NonPublic);
         TargetRules inner = (TargetRules)innerField.GetValue(Target);
-        inner.AdditionalCompilerArguments += " -std=c++20 -D _LIBCPP_ENABLE_CXX20_REMOVED_TYPE_TRAITS -fcoroutines-ts -Wno-unused-result";
+        inner.AdditionalCompilerArguments += " -std=c++20 -D _LIBCPP_ENABLE_CXX20_REMOVED_TYPE_TRAITS -fcoroutines-ts -fexceptions";
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		
