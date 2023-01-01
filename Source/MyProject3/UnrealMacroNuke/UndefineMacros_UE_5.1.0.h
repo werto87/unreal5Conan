@@ -1,3 +1,4 @@
+#define UI UI_ST
 #pragma push_macro("ABSTRACT")
 #undef ABSTRACT
 #pragma push_macro("ACCESSIBILITY_DEBUG_RESPONSIVENESS")
