@@ -3,7 +3,9 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
+
 #include "MyProject3/UnrealMacroNuke/UndefineMacros_UE_5.1.0.h"
+
 #include <boost/asio.hpp>
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/io_context.hpp>
@@ -26,9 +28,10 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+
 #include "MyProject3/UnrealMacroNuke/RedefineMacros_UE_5.1.0.h"
 #pragma clang diagnostic pop
-typedef boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::basic_waitable_timer<boost::asio::chrono::system_clock> > CoroTimer;
+using CoroTimer = boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::basic_waitable_timer<boost::asio::chrono::system_clock>>;
 
 template <class T> class MyWebsocket
 {
@@ -37,7 +40,7 @@ public:
   MyWebsocket (std::shared_ptr<T> webSocket_, std::string loggingName_, fmt::text_style loggingTextStyleForName_, std::string id_) : webSocket{ webSocket_ }, loggingName{ std::move (loggingName_) }, loggingTextStyleForName{ std::move (loggingTextStyleForName_) }, id{ std::move (id_) } {}
   boost::asio::awaitable<std::string> async_read_one_message ();
 
-  boost::asio::awaitable<void> readLoop (std::function<void (std::string const &readResult)> onRead);
+  boost::asio::awaitable<void> readLoop (std::function<void (const std::string &readResult)> onRead);
 
   boost::asio::awaitable<void> async_write_one_message (std::string message);
 
@@ -56,21 +59,24 @@ private:
 };
 
 inline void
-printTagWithPadding (std::string const &tag, fmt::text_style const &style, size_t maxLength)
+printTagWithPadding (const std::string &tag, const fmt::text_style &style, size_t maxLength)
 {
-  if (maxLength < 3) throw std::logic_error{ "maxLength should be min 3" };
+  if (maxLength < 3)
+    {
+      throw std::logic_error{ "maxLength should be min 3" };
+    }
   if (tag.length () > maxLength)
     {
-      fmt::print (style, "[{:<" + std::to_string (maxLength) + "}]", std::string{ tag.begin (), tag.begin () + boost::numeric_cast<int> (maxLength) - 3 } + "...");
+      print (style, "[{:<" + std::to_string (maxLength) + "}]", std::string{ tag.begin (), tag.begin () + boost::numeric_cast<int> (maxLength) - 3 } + "...");
     }
   else
     {
-      fmt::print (style, "[{}]{}", tag, std::string (maxLength - tag.size (), '-'));
+      print (style, "[{}]{}", tag, std::string (maxLength - tag.size (), '-'));
     }
 }
 
 template <class T>
-inline boost::asio::awaitable<std::string>
+boost::asio::awaitable<std::string>
 MyWebsocket<T>::async_read_one_message ()
 {
 
@@ -86,8 +92,8 @@ MyWebsocket<T>::async_read_one_message ()
 }
 
 template <class T>
-inline boost::asio::awaitable<void>
-MyWebsocket<T>::readLoop (std::function<void (std::string const &readResult)> onRead)
+boost::asio::awaitable<void>
+MyWebsocket<T>::readLoop (std::function<void (const std::string &readResult)> onRead)
 {
   try
     {
@@ -100,12 +106,15 @@ MyWebsocket<T>::readLoop (std::function<void (std::string const &readResult)> on
   catch (...)
     {
       webSocket.reset ();
-      if (timer) timer->cancel ();
+      if (timer)
+        {
+          timer->cancel ();
+        }
       throw;
     }
 }
 template <class T>
-inline boost::asio::awaitable<void>
+boost::asio::awaitable<void>
 MyWebsocket<T>::async_write_one_message (std::string message)
 {
 #ifdef LOG_MY_WEBSOCKET
@@ -116,7 +125,7 @@ MyWebsocket<T>::async_write_one_message (std::string message)
   co_await webSocket->async_write (boost::asio::buffer (std::move (message)), boost::asio::use_awaitable);
 }
 template <class T>
-inline boost::asio::awaitable<void>
+boost::asio::awaitable<void>
 MyWebsocket<T>::writeLoop ()
 {
   auto connection = std::weak_ptr<T>{ webSocket };
@@ -151,22 +160,28 @@ MyWebsocket<T>::writeLoop ()
             }
         }
     }
-  catch (std::exception const &e)
+  catch (const std::exception &e)
     {
       webSocket.reset ();
-      if (timer) timer->cancel ();
-      throw e;
+      if (timer)
+        {
+          timer->cancel ();
+        }
+      throw;
     }
 }
 template <class T>
-inline void
+void
 MyWebsocket<T>::sendMessage (std::string message)
 {
   msgQueue.push_back (std::move (message));
-  if (timer) timer->cancel ();
+  if (timer)
+    {
+      timer->cancel ();
+    }
 }
 template <class T>
-inline boost::asio::awaitable<void>
+boost::asio::awaitable<void>
 MyWebsocket<T>::async_close ()
 {
   co_await webSocket->async_close ("User left game");
