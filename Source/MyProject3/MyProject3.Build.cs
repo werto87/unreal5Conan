@@ -17,9 +17,7 @@ public class MyProject3 : ModuleRules
         Type type = Target.GetType();
         FieldInfo innerField = type.GetField("Inner", BindingFlags.Instance | BindingFlags.NonPublic);
         TargetRules inner = (TargetRules)innerField.GetValue(Target);
-		//TODO could not find out how to use c++20 features. Wait until c++20 support is in unreal engine. can not use concepts or auto as type in function
-		//TODO CppStandard = CppStandardVersion.Cpp20; is not compiling
-		//TODO in case compiler flags need to be set inner.AdditionalCompilerArguments += " ";
+		inner.AdditionalCompilerArguments += "-DPATH_TO_USER_DEFINED_GAME_OPTION=<modern_durak_game_option/gameOption.hxx>";
 		inner.bEnableCppCoroutinesForEvaluation=true;
 	}
 

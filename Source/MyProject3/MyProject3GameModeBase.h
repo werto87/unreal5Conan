@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <boost/asio/io_context.hpp>
-
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "MyProject3GameModeBase.generated.h"
+#include <boost/asio/io_context.hpp>
 
+#include "MyProject3GameModeBase.generated.h"
 /**
  *
  */
@@ -20,5 +19,6 @@ public:
   virtual void BeginPlay () override;
   virtual void Tick (float DeltaSeconds) override;
 
+  void myFunc ();
   boost::asio::io_context ioContext{};
 };

@@ -6,8 +6,9 @@
 #pragma clang diagnostic ignored "-Weverything"
 
 #include "UnrealMacroNuke/UndefineMacros_UE_5.1.0.h"
-
+//
 #include "Logging/LogMacros.h"
+#include "logic/LogicStateMachine.h"
 #include "util/myWebsocket.hxx"
 #include <boost/asio.hpp>
 #include <boost/asio/experimental/awaitable_operators.hpp>
@@ -15,18 +16,19 @@
 #include <boost/asio/post.hpp>
 #include <boost/beast.hpp>
 #include <boost/beast/ssl/ssl_stream.hpp>
-#include <boost/certify/extensions.hpp>
 #include <boost/certify/https_verification.hpp>
+#include <boost/json/src.hpp> //ONLY ONCE IN PROJECT
 #include <chrono>
+#include <confu_json/confu_json.hxx>
 #include <exception>
-
+#include <login_matchmaking_game_shared_type/userMatchmakingSerialization.hxx>
+//
 #include "UnrealMacroNuke/RedefineMacros_UE_5.1.0.h"
 
 #pragma clang diagnostic pop
 
 using CoroTimer = boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::basic_waitable_timer<boost::asio::chrono::system_clock>>;
 using Websocket = boost::beast::websocket::stream<boost::asio::use_awaitable_t<>::as_default_on_t<boost::beast::tcp_stream>>;
-AMyProject3GameModeBase::AMyProject3GameModeBase () { PrimaryActorTick.bCanEverTick = true; }
 
 template <typename T>
 boost::asio::awaitable<void>
@@ -59,7 +61,14 @@ connectToModernDurak (T handleMsgFromGame, boost::asio::io_context &ioContext, s
               co_await myWebsocket->async_write_one_message (message);
             }
           using namespace experimental::awaitable_operators;
-          co_await (myWebsocket->readLoop ([myWebsocket, handleMsgFromGame, &ioContext] (const std::string &msg) { handleMsgFromGame (ioContext, msg, myWebsocket); }) && myWebsocket->writeLoop ());
+          auto logicStateMachine = LogicStateMachine{};
+          co_await (myWebsocket->readLoop ([&logicStateMachine] (const std::string &msg) {
+            UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString{ msg.c_str () });
+            if (auto error = logicStateMachine.processEvent (msg))
+              {
+                UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString{ error->c_str () });
+              }
+          }) && myWebsocket->writeLoop ());
         }
       catch (const std::exception &e)
         {
@@ -103,7 +112,14 @@ connectToLocalWebsocket (T handleMsgFromGame, boost::asio::io_context &ioContext
               co_await myWebsocket->async_write_one_message (message);
             }
           using namespace experimental::awaitable_operators;
-          co_await (myWebsocket->readLoop ([myWebsocket, handleMsgFromGame, &ioContext] (const std::string &msg) { handleMsgFromGame (ioContext, msg, myWebsocket); }) && myWebsocket->writeLoop ());
+          auto logicStateMachine = LogicStateMachine{};
+          co_await (myWebsocket->readLoop ([&logicStateMachine] (const std::string &msg) {
+            UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString{ msg.c_str () });
+            if (auto error = logicStateMachine.processEvent (msg))
+              {
+                UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString{ error->c_str () });
+              }
+          }) && myWebsocket->writeLoop ());
         }
       catch (const std::exception &e)
         {
@@ -144,15 +160,46 @@ const auto printException1 = [] (std::exception_ptr eptr) { printExceptionHelper
 const auto printException2 = [] (std::exception_ptr eptr, auto) { printExceptionHelper (eptr); };
 
 const auto printException = overloaded{ printException1, printException2 };
+
+AMyProject3GameModeBase::AMyProject3GameModeBase () { PrimaryActorTick.bCanEverTick = true; }
+
 // Called when the game starts or when spawned
 void
 AMyProject3GameModeBase::BeginPlay ()
 {
   Super::BeginPlay ();
   using namespace boost::asio;
-  auto handleMsgFromGame = [] (const auto &, auto msg, auto) { UE_LOG (LogTemp, Warning, TEXT ("co_spawn exception: %s"), *FString{ msg.c_str () }); };
+  auto handleMsgFromGame = [&] (const auto &, auto msg, auto, auto &sm) {
+    std::vector<std::string> splitMesssage{};
+    boost::algorithm::split (splitMesssage, msg, boost::is_any_of ("|"));
+    if (splitMesssage.size () == 2)
+      {
+        const auto &typeToSearch = splitMesssage.at (0);
+        const auto &objectAsString = splitMesssage.at (1);
+        bool typeFound = false;
+        boost::hana::for_each (user_matchmaking::userMatchmaking, [&] (const auto &x) {
+          if (typeToSearch == confu_json::type_name<std::decay_t<decltype (x)>> ())
+            {
+              typeFound = true;
+              if (auto error = sm.processEvent (objectAsString))
+                {
+                  UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString{ error->c_str () });
+                }
+            }
+        });
+        if (not typeFound)
+          {
+            UE_LOG (LogTemp, Error, TEXT ("could not find a match for typeToSearch in userMatchmaking '%s'"), *FString{ typeToSearch.c_str () });
+          }
+      }
+    else
+      {
+        UE_LOG (LogTemp, Error, TEXT ("not handled because number of '|' is not one. received message: '%s'"), *FString{ msg.c_str () });
+      }
+  };
+
   auto sendMessageBeforeStartRead = std::vector<std::string>{ { "bubu" } };
-  auto isLocalWebsocket = true;
+  auto isLocalWebsocket = false;
   if (isLocalWebsocket)
     {
       co_spawn (ioContext, connectToLocalWebsocket (handleMsgFromGame, ioContext, sendMessageBeforeStartRead, "test"), printException);
@@ -166,6 +213,7 @@ AMyProject3GameModeBase::BeginPlay ()
 void
 AMyProject3GameModeBase::Tick (float DeltaSeconds)
 {
+
   Super::Tick (DeltaSeconds);
   ioContext.poll_one ();
 }
