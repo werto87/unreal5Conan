@@ -19,7 +19,7 @@
 
 #pragma clang diagnostic pop
 
-struct MatchmakingGameDependencies
+struct LogicStateMachineDependencies
 {
 };
 
@@ -49,13 +49,50 @@ public:
 };
 
 
+struct my_logger
+{
+  template <class SM, class TEvent>
+  void
+  log_process_event (const TEvent &event)
+  {
+    if constexpr (boost::fusion::traits::is_sequence<TEvent>::value)
+      {
+        std::cout << "\n[" << boost::sml::aux::get_type_name<SM> () << "]"
+                  << "[process_event] '" << objectToStringWithObjectName (event) << "'" << std::endl;
+      }
+    else
+      {
+        printf ("[%s][process_event] %s\n", boost::sml::aux::get_type_name<SM> (), boost::sml::aux::get_type_name<TEvent> ());
+      }
+  }
 
+  template <class SM, class TGuard, class TEvent>
+  void
+  log_guard (const TGuard &, const TEvent &, bool result)
+  {
+    printf ("[%s][guard]\t  '%s' %s\n", boost::sml::aux::get_type_name<SM> (), boost::sml::aux::get_type_name<TGuard> (), (result ? "[OK]" : "[Reject]"));
+  }
+
+  template <class SM, class TAction, class TEvent>
+  void
+  log_action (const TAction &, const TEvent &)
+  {
+    printf ("[%s][action]\t '%s' \n", boost::sml::aux::get_type_name<SM> (), boost::sml::aux::get_type_name<TAction> ());
+  }
+
+  template <class SM, class TSrcState, class TDstState>
+  void
+  log_state_change (const TSrcState &src, const TDstState &dst)
+  {
+    printf ("[%s][transition]\t  '%s' -> '%s'\n", boost::sml::aux::get_type_name<SM> (), src.c_str (), dst.c_str ());
+  }
+};
 
 struct LogicStateMachine::StateMachineWrapper
 {
-  StateMachineWrapper (LogicStateMachine *owner,MatchmakingGameDependencies matchmakingGameDependencies_) : matchmakingGameDependencies{std::move(matchmakingGameDependencies_)},
+  StateMachineWrapper (LogicStateMachine *owner,LogicStateMachineDependencies matchmakingGameDependencies_) : matchmakingGameDependencies{std::move(matchmakingGameDependencies_)},
   impl (owner,matchmakingGameDependencies){}
-  MatchmakingGameDependencies matchmakingGameDependencies;
+  LogicStateMachineDependencies matchmakingGameDependencies;
 
 #ifdef LOG_FOR_STATE_MACHINE
   my_logger logger;
@@ -72,7 +109,7 @@ LogicStateMachine::StateMachineWrapperDeleter::operator() (StateMachineWrapper *
 }
 
 
-LogicStateMachine::LogicStateMachine(): sm{ new StateMachineWrapper{this, MatchmakingGameDependencies{}} } {}
+LogicStateMachine::LogicStateMachine(): sm{ new StateMachineWrapper{this, LogicStateMachineDependencies{}} } {}
 
 
 
