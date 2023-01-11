@@ -30,9 +30,8 @@
 using CoroTimer = boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::basic_waitable_timer<boost::asio::chrono::system_clock>>;
 using Websocket = boost::beast::websocket::stream<boost::asio::use_awaitable_t<>::as_default_on_t<boost::beast::tcp_stream>>;
 
-template <typename T>
 boost::asio::awaitable<void>
-connectToModernDurak (T handleMsgFromGame, boost::asio::io_context &ioContext, std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {})
+connectToModernDurak (boost::asio::io_context &ioContext, std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {})
 {
   try
     {
@@ -81,9 +80,8 @@ connectToModernDurak (T handleMsgFromGame, boost::asio::io_context &ioContext, s
     }
 }
 
-template <typename T>
 boost::asio::awaitable<void>
-connectToLocalWebsocket (T handleMsgFromGame, boost::asio::io_context &ioContext, std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {})
+connectToLocalWebsocket (boost::asio::io_context &ioContext, std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {})
 {
   try
     {
@@ -169,44 +167,15 @@ AMyProject3GameModeBase::BeginPlay ()
 {
   Super::BeginPlay ();
   using namespace boost::asio;
-  auto handleMsgFromGame = [&] (const auto &, auto msg, auto, auto &sm) {
-    std::vector<std::string> splitMesssage{};
-    boost::algorithm::split (splitMesssage, msg, boost::is_any_of ("|"));
-    if (splitMesssage.size () == 2)
-      {
-        const auto &typeToSearch = splitMesssage.at (0);
-        const auto &objectAsString = splitMesssage.at (1);
-        bool typeFound = false;
-        boost::hana::for_each (user_matchmaking::userMatchmaking, [&] (const auto &x) {
-          if (typeToSearch == confu_json::type_name<std::decay_t<decltype (x)>> ())
-            {
-              typeFound = true;
-              if (auto error = sm.processEvent (objectAsString))
-                {
-                  UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString{ error->c_str () });
-                }
-            }
-        });
-        if (not typeFound)
-          {
-            UE_LOG (LogTemp, Error, TEXT ("could not find a match for typeToSearch in userMatchmaking '%s'"), *FString{ typeToSearch.c_str () });
-          }
-      }
-    else
-      {
-        UE_LOG (LogTemp, Error, TEXT ("not handled because number of '|' is not one. received message: '%s'"), *FString{ msg.c_str () });
-      }
-  };
-
-  auto sendMessageBeforeStartRead = std::vector<std::string>{ { "bubu" } };
+  auto sendMessageBeforeStartRead = std::vector<std::string>{ { "LoginAsGuest|{}" } };
   auto isLocalWebsocket = false;
   if (isLocalWebsocket)
     {
-      co_spawn (ioContext, connectToLocalWebsocket (handleMsgFromGame, ioContext, sendMessageBeforeStartRead, "test"), printException);
+      co_spawn (ioContext, connectToLocalWebsocket (ioContext, sendMessageBeforeStartRead, "test"), printException);
     }
   else
     {
-      co_spawn (ioContext, connectToModernDurak (handleMsgFromGame, ioContext, sendMessageBeforeStartRead, "test"), printException);
+      co_spawn (ioContext, connectToModernDurak (ioContext, sendMessageBeforeStartRead, "test"), printException);
     }
 }
 
