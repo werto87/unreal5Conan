@@ -90,7 +90,7 @@ struct my_logger
 
 struct LogicStateMachine::StateMachineWrapper
 {
-  StateMachineWrapper (LogicStateMachine *owner, LogicStateMachineDependencies matchmakingGameDependencies_) : matchmakingGameDependencies{ std::move (matchmakingGameDependencies_) }, impl (owner, matchmakingGameDependencies) {}
+  StateMachineWrapper (LogicStateMachine *owner, LogicStateMachineDependencies matchmakingGameDependencies_) : matchmakingGameDependencies { std::move (matchmakingGameDependencies_) }, impl (owner, matchmakingGameDependencies) {}
   LogicStateMachineDependencies matchmakingGameDependencies;
 
 #ifdef LOG_FOR_STATE_MACHINE
@@ -107,15 +107,15 @@ LogicStateMachine::StateMachineWrapperDeleter::operator() (const StateMachineWra
   delete p;
 }
 
-LogicStateMachine::LogicStateMachine () : sm{ new StateMachineWrapper{ this, LogicStateMachineDependencies{} } } {}
+LogicStateMachine::LogicStateMachine () : sm { new StateMachineWrapper { this, LogicStateMachineDependencies {} } } {}
 
 std::optional<std::string>
 LogicStateMachine::processEvent (const std::string &event)
 {
   {
-    std::vector<std::string> SplitMessage{};
+    std::vector<std::string> SplitMessage {};
     split (SplitMessage, event, boost::is_any_of ("|"));
-    auto result = std::optional<std::string>{};
+    auto result = std::optional<std::string> {};
     if (SplitMessage.size () == 2
 
     )
@@ -128,7 +128,7 @@ LogicStateMachine::processEvent (const std::string &event)
           if (typeToSearch == confu_json::type_name<std::decay_t<decltype (x)> > ())
             {
               typeFound = true;
-              boost::json::error_code ec{};
+              boost::json::error_code ec {};
               const auto messageAsObject = confu_json::read_json (objectAsString, ec);
               if (ec)
                 {
@@ -145,7 +145,7 @@ LogicStateMachine::processEvent (const std::string &event)
                     }
                   catch (const std::exception &e)
                     {
-                      auto messageForUser = std::stringstream{};
+                      auto messageForUser = std::stringstream {};
                       messageForUser << "exception: " << e.what () << '\n';
                       messageForUser << "messageAsObject: " << messageAsObject << '\n';
                       messageForUser << "example for " << confu_json::type_name<std::decay_t<decltype (x)> > () << " : '" << confu_json::to_json<> (x) << "'" << '\n';
