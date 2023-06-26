@@ -47,7 +47,7 @@ public:
       );
   }
 };
-
+// clang-format on
 
 struct my_logger
 {
@@ -90,67 +90,74 @@ struct my_logger
 
 struct LogicStateMachine::StateMachineWrapper
 {
-  StateMachineWrapper (LogicStateMachine *owner,LogicStateMachineDependencies matchmakingGameDependencies_) : matchmakingGameDependencies{std::move(matchmakingGameDependencies_)},
-  impl (owner,matchmakingGameDependencies){}
+  StateMachineWrapper (LogicStateMachine *owner, LogicStateMachineDependencies matchmakingGameDependencies_) : matchmakingGameDependencies{ std::move (matchmakingGameDependencies_) }, impl (owner, matchmakingGameDependencies) {}
   LogicStateMachineDependencies matchmakingGameDependencies;
 
 #ifdef LOG_FOR_STATE_MACHINE
   my_logger logger;
-  boost::sml::sm<StateMachineImpl, boost::sml::logger<my_logger>> impl;
+  boost::sml::sm<StateMachineImpl, boost::sml::logger<my_logger> > impl;
 #else
   boost::sml::sm<StateMachineImpl> impl;
 #endif
 };
 
 void // has to be after YourClass::StateMachineWrapper definition
-LogicStateMachine::StateMachineWrapperDeleter::operator() ( const StateMachineWrapper *p)const
+LogicStateMachine::StateMachineWrapperDeleter::operator() (const StateMachineWrapper *p) const
 {
   delete p;
 }
 
+LogicStateMachine::LogicStateMachine () : sm{ new StateMachineWrapper{ this, LogicStateMachineDependencies{} } } {}
 
-LogicStateMachine::LogicStateMachine(): sm{ new StateMachineWrapper{this, LogicStateMachineDependencies{}} } {}
-
-
-
-std::optional<std::string> LogicStateMachine::processEvent (const std::string  &event) {
+std::optional<std::string>
+LogicStateMachine::processEvent (const std::string &event)
+{
   {
     std::vector<std::string> SplitMessage{};
     split (SplitMessage, event, boost::is_any_of ("|"));
     auto result = std::optional<std::string>{};
-    if (SplitMessage.size () == 2)
+    if (SplitMessage.size () == 2
+
+    )
+
       {
-        const auto  &typeToSearch = SplitMessage.at (0);
-        const auto  &objectAsString = SplitMessage.at (1);
+        const auto &typeToSearch = SplitMessage.at (0);
+        const auto &objectAsString = SplitMessage.at (1);
         bool typeFound = false;
         boost::hana::for_each (user_matchmaking::userMatchmaking, [&] (const auto &x) {
-          if (typeToSearch == confu_json::type_name< std::decay_t<decltype (x)>> ())
+          if (typeToSearch == confu_json::type_name<std::decay_t<decltype (x)> > ())
             {
               typeFound = true;
               boost::json::error_code ec{};
               const auto messageAsObject = confu_json::read_json (objectAsString, ec);
-              if (ec) {result = "read_json error: " + ec.message ();}
+              if (ec)
+                {
+                  result = "read_json error: " + ec.message ();
+                }
               else
                 {
                   try
                     {
-                      if (not sm->impl.process_event (confu_json::to_object<std::decay_t<decltype (x)>> (messageAsObject)))
+                      if (not sm->impl.process_event (confu_json::to_object<std::decay_t<decltype (x)> > (messageAsObject)))
                         {
                           result = "No transition found";
                         }
                     }
-                  catch (const std::exception  &e)
+                  catch (const std::exception &e)
                     {
                       auto messageForUser = std::stringstream{};
                       messageForUser << "exception: " << e.what () << '\n';
                       messageForUser << "messageAsObject: " << messageAsObject << '\n';
-                      messageForUser << "example for " << confu_json::type_name<std::decay_t<decltype (x)>> () << " : '" << confu_json::to_json<> (x) << "'" << '\n';
+                      messageForUser << "example for " << confu_json::type_name<std::decay_t<decltype (x)> > () << " : '" << confu_json::to_json<> (x) << "'" << '\n';
                       result = messageForUser.str ();
                     }
                 }
             }
         });
-        if (not typeFound) {result = "could not find a match for typeToSearch in shared_class::gameTypes '" + typeToSearch + "'";}
+        if (not typeFound)
+          {
+            result = "could not find a match for typeToSearch in shared_class::gameTypes '" + typeToSearch + "'";
+          }
       }
     else
       {
@@ -158,5 +165,4 @@ std::optional<std::string> LogicStateMachine::processEvent (const std::string  &
       }
     return result;
   }
-
 }
