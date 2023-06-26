@@ -14,7 +14,7 @@ class LogicStateMachine
   struct StateMachineWrapper;
   struct StateMachineWrapperDeleter
   {
-    void operator() (StateMachineWrapper *p);
+    void operator() (const StateMachineWrapper *p)const;
   };
 
 public:

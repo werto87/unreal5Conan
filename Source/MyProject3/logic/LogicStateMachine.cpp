@@ -103,7 +103,7 @@ struct LogicStateMachine::StateMachineWrapper
 };
 
 void // has to be after YourClass::StateMachineWrapper definition
-LogicStateMachine::StateMachineWrapperDeleter::operator() (StateMachineWrapper *p)
+LogicStateMachine::StateMachineWrapperDeleter::operator() ( const StateMachineWrapper *p)const
 {
   delete p;
 }
@@ -115,20 +115,20 @@ LogicStateMachine::LogicStateMachine(): sm{ new StateMachineWrapper{this, LogicS
 
 std::optional<std::string> LogicStateMachine::processEvent (const std::string  &event) {
   {
-    std::vector<std::string> splitMesssage{};
-    split (splitMesssage, event, boost::is_any_of ("|"));
+    std::vector<std::string> SplitMessage{};
+    split (SplitMessage, event, boost::is_any_of ("|"));
     auto result = std::optional<std::string>{};
-    if (splitMesssage.size () == 2)
+    if (SplitMessage.size () == 2)
       {
-        const auto  &typeToSearch = splitMesssage.at (0);
-        const auto  &objectAsString = splitMesssage.at (1);
+        const auto  &typeToSearch = SplitMessage.at (0);
+        const auto  &objectAsString = SplitMessage.at (1);
         bool typeFound = false;
         boost::hana::for_each (user_matchmaking::userMatchmaking, [&] (const auto &x) {
           if (typeToSearch == confu_json::type_name< std::decay_t<decltype (x)>> ())
             {
               typeFound = true;
               boost::json::error_code ec{};
-              auto messageAsObject = confu_json::read_json (objectAsString, ec);
+              const auto messageAsObject = confu_json::read_json (objectAsString, ec);
               if (ec) {result = "read_json error: " + ec.message ();}
               else
                 {
