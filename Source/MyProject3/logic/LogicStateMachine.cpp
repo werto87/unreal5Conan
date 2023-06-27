@@ -41,7 +41,7 @@ public:
   {
     using namespace boost::sml;
     // clang-format off
-    return make_transition_table(
+    return make_transition_table (
   // Default-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 * state<SomeState>                         + event<SomeEvent>                             / SomeAction
       );
@@ -116,10 +116,7 @@ LogicStateMachine::processEvent (const std::string &event)
     std::vector<std::string> SplitMessage {};
     split (SplitMessage, event, boost::is_any_of ("|"));
     auto result = std::optional<std::string> {};
-    if (SplitMessage.size () == 2
-
-    )
-
+    if (SplitMessage.size () == 2)
       {
         const auto &typeToSearch = SplitMessage.at (0);
         const auto &objectAsString = SplitMessage.at (1);
