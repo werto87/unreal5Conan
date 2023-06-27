@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include <boost/asio/io_context.hpp>
+#include <string>
 
 #include "MyProject3GameModeBase.generated.h"
 /**
@@ -20,5 +21,8 @@ public:
   virtual void Tick (float DeltaSeconds) override;
 
   void myFunc ();
-  boost::asio::io_context ioContext{};
+
+  UPROPERTY (VisibleAnywhere, BlueprintReadOnly)
+  FString helloWorld { "Hello World!" };
+  boost::asio::io_context ioContext {};
 };

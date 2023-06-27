@@ -27,8 +27,8 @@
 
 #pragma clang diagnostic pop
 
-using CoroTimer = boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::basic_waitable_timer<boost::asio::chrono::system_clock>>;
-using Websocket = boost::beast::websocket::stream<boost::asio::use_awaitable_t<>::as_default_on_t<boost::beast::tcp_stream>>;
+using CoroTimer = boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::basic_waitable_timer<boost::asio::chrono::system_clock> >;
+using Websocket = boost::beast::websocket::stream<boost::asio::use_awaitable_t<>::as_default_on_t<boost::beast::tcp_stream> >;
 
 boost::asio::awaitable<void>
 connectToModernDurak (boost::asio::io_context &ioContext, std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {})
@@ -39,44 +39,44 @@ connectToModernDurak (boost::asio::io_context &ioContext, std::vector<std::strin
       using namespace boost::beast;
       try
         {
-          using SSLWebsocket = websocket::stream<ssl_stream<tcp_stream>>;
-          ssl::context ctx{ ssl::context::tlsv12_client };
-          auto address = std::string{ "www.modern-durak.com" };
-          auto connection = std::make_shared<SSLWebsocket> (SSLWebsocket{ ioContext, ctx });
+          using SSLWebsocket = websocket::stream<ssl_stream<tcp_stream> >;
+          ssl::context ctx { ssl::context::tlsv12_client };
+          auto address = std::string { "www.modern-durak.com" };
+          auto connection = std::make_shared<SSLWebsocket> (SSLWebsocket { ioContext, ctx });
           get_lowest_layer (*connection).expires_never ();
           connection->set_option (websocket::stream_base::timeout::suggested (role_type::client));
           connection->set_option (websocket::stream_base::decorator ([] (websocket::request_type &req) { req.set (http::field::user_agent, std::string (BOOST_BEAST_VERSION_STRING) + " websocket-client-async-ssl"); }));
           using ip::tcp;
           tcp::resolver::query myQuery (address, "https");
-          tcp::resolver resolver{ ioContext };
+          tcp::resolver resolver { ioContext };
           tcp::resolver::iterator endpoint_iterator = resolver.resolve (myQuery);
           co_await get_lowest_layer (*connection).async_connect (*endpoint_iterator, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint_iterator->endpoint ().address ().to_string () + ":" + std::to_string (endpoint_iterator->endpoint ().port ()), "/wss", use_awaitable);
           static size_t id = 0;
-          auto myWebsocket = std::make_shared<MyWebsocket<SSLWebsocket>> (MyWebsocket<SSLWebsocket>{ std::move (connection), connectionName ? connectionName.value () : std::string{ "connectWebsocket" }, fg (fmt::color::chocolate), std::to_string (id++) });
+          auto myWebsocket = std::make_shared<MyWebsocket<SSLWebsocket> > (MyWebsocket<SSLWebsocket> { std::move (connection), connectionName ? connectionName.value () : std::string { "connectWebsocket" }, fg (fmt::color::chocolate), std::to_string (id++) });
           for (auto message : sendMessageBeforeStartRead)
             {
               co_await myWebsocket->async_write_one_message (message);
             }
           using namespace experimental::awaitable_operators;
-          auto logicStateMachine = LogicStateMachine{};
-          co_await (myWebsocket->readLoop ([&logicStateMachine] (const std::string &msg) {
-            UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString{ msg.c_str () });
+          auto logicStateMachine = LogicStateMachine {};
+          co_await (myWebsocket->readLoop ([&logicStateMachine] (std::string const &msg) {
+            UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString { msg.c_str () });
             if (auto error = logicStateMachine.processEvent (msg))
               {
-                UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString{ error->c_str () });
+                UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString { error->c_str () });
               }
           }) && myWebsocket->writeLoop ());
         }
-      catch (const std::exception &e)
+      catch (std::exception const &e)
         {
-          UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString{ e.what () });
+          UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString { e.what () });
         }
     }
-  catch (const std::exception &e)
+  catch (std::exception const &e)
     {
-      UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString{ e.what () });
+      UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString { e.what () });
     }
 }
 
@@ -89,44 +89,44 @@ connectToLocalWebsocket (boost::asio::io_context &ioContext, std::vector<std::st
       using namespace boost::beast;
       try
         {
-          using SSLWebsocket = websocket::stream<ssl_stream<tcp_stream>>;
-          ssl::context ctx{ ssl::context::tlsv12_client };
-          auto address = std::string{};
+          using SSLWebsocket = websocket::stream<ssl_stream<tcp_stream> >;
+          ssl::context ctx { ssl::context::tlsv12_client };
+          auto address = std::string {};
           ctx.set_verify_mode (ssl::verify_none); // DO NOT USE THIS IN PRODUCTION THIS WILL IGNORE CHECKING FOR TRUSTFUL CERTIFICATE
-          address = std::string{ "localhost:55555" };
-          auto connection = std::make_shared<SSLWebsocket> (SSLWebsocket{ ioContext, ctx });
+          address = std::string { "localhost:55555" };
+          auto connection = std::make_shared<SSLWebsocket> (SSLWebsocket { ioContext, ctx });
           get_lowest_layer (*connection).expires_never ();
           connection->set_option (websocket::stream_base::timeout::suggested (role_type::client));
           connection->set_option (websocket::stream_base::decorator ([] (websocket::request_type &req) { req.set (http::field::user_agent, std::string (BOOST_BEAST_VERSION_STRING) + " websocket-client-async-ssl"); }));
           using ip::tcp;
-          auto endpoint = tcp::endpoint{ tcp::v4 (), 55555 };
+          auto endpoint = tcp::endpoint { tcp::v4 (), 55555 };
           co_await get_lowest_layer (*connection).async_connect (endpoint, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint.address ().to_string () + ":" + std::to_string (endpoint.port ()), "/", use_awaitable);
           static size_t id = 0;
-          auto myWebsocket = std::make_shared<MyWebsocket<SSLWebsocket>> (MyWebsocket<SSLWebsocket>{ std::move (connection), connectionName ? connectionName.value () : std::string{ "connectWebsocket" }, fg (fmt::color::chocolate), std::to_string (id++) });
+          auto myWebsocket = std::make_shared<MyWebsocket<SSLWebsocket> > (MyWebsocket<SSLWebsocket> { std::move (connection), connectionName ? connectionName.value () : std::string { "connectWebsocket" }, fg (fmt::color::chocolate), std::to_string (id++) });
           for (auto message : sendMessageBeforeStartRead)
             {
               co_await myWebsocket->async_write_one_message (message);
             }
           using namespace experimental::awaitable_operators;
-          auto logicStateMachine = LogicStateMachine{};
-          co_await (myWebsocket->readLoop ([&logicStateMachine] (const std::string &msg) {
-            UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString{ msg.c_str () });
+          auto logicStateMachine = LogicStateMachine {};
+          co_await (myWebsocket->readLoop ([&logicStateMachine] (std::string const &msg) {
+            UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString { msg.c_str () });
             if (auto error = logicStateMachine.processEvent (msg))
               {
-                UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString{ error->c_str () });
+                UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString { error->c_str () });
               }
           }) && myWebsocket->writeLoop ());
         }
-      catch (const std::exception &e)
+      catch (std::exception const &e)
         {
-          UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString{ e.what () });
+          UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString { e.what () });
         }
     }
-  catch (const std::exception &e)
+  catch (std::exception const &e)
     {
-      UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString{ e.what () });
+      UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString { e.what () });
     }
 }
 
@@ -140,9 +140,9 @@ printExceptionHelper (std::exception_ptr eptr)
           std::rethrow_exception (eptr);
         }
     }
-  catch (const std::exception &e)
+  catch (std::exception const &e)
     {
-      UE_LOG (LogTemp, Error, TEXT ("co_spawn exception: %s"), *FString{ e.what () });
+      UE_LOG (LogTemp, Error, TEXT ("co_spawn exception: %s"), *FString { e.what () });
     }
 }
 
@@ -153,11 +153,11 @@ template <class... Fs> struct overloaded : Fs...
 
 template <class... Fs> overloaded (Fs...) -> overloaded<Fs...>;
 
-const auto printException1 = [] (std::exception_ptr eptr) { printExceptionHelper (eptr); };
+auto const printException1 = [] (std::exception_ptr eptr) { printExceptionHelper (eptr); };
 
-const auto printException2 = [] (std::exception_ptr eptr, auto) { printExceptionHelper (eptr); };
+auto const printException2 = [] (std::exception_ptr eptr, auto) { printExceptionHelper (eptr); };
 
-const auto printException = overloaded{ printException1, printException2 };
+auto const printException = overloaded { printException1, printException2 };
 
 AMyProject3GameModeBase::AMyProject3GameModeBase () { PrimaryActorTick.bCanEverTick = true; }
 
@@ -167,7 +167,7 @@ AMyProject3GameModeBase::BeginPlay ()
 {
   Super::BeginPlay ();
   using namespace boost::asio;
-  auto sendMessageBeforeStartRead = std::vector<std::string>{ { "LoginAsGuest|{}" } };
+  auto sendMessageBeforeStartRead = std::vector<std::string> { { "LoginAsGuest|{}" } };
   auto isLocalWebsocket = false;
   if (isLocalWebsocket)
     {

@@ -21,9 +21,11 @@
 
 struct LogicStateMachineDependencies
 {
+  // UPROPERTY (VisibleAnywhere, BlueprintReadOnly)
+  std::string helloWorld { "Hello World" };
 };
 
-const auto SomeAction = [] () {};
+auto const SomeAction = [] () {};
 
 struct SomeState
 {
@@ -53,7 +55,7 @@ struct my_logger
 {
   template <class SM, class TEvent>
   void
-  log_process_event (const TEvent &event)
+  log_process_event (TEvent const &event)
   {
     if constexpr (boost::fusion::traits::is_sequence<TEvent>::value)
       {
@@ -68,21 +70,21 @@ struct my_logger
 
   template <class SM, class TGuard, class TEvent>
   void
-  log_guard (const TGuard &, const TEvent &, bool result)
+  log_guard (TGuard const &, TEvent const &, bool result)
   {
     printf ("[%s][guard]\t  '%s' %s\n", boost::sml::aux::get_type_name<SM> (), boost::sml::aux::get_type_name<TGuard> (), (result ? "[OK]" : "[Reject]"));
   }
 
   template <class SM, class TAction, class TEvent>
   void
-  log_action (const TAction &, const TEvent &)
+  log_action (TAction const &, TEvent const &)
   {
     printf ("[%s][action]\t '%s' \n", boost::sml::aux::get_type_name<SM> (), boost::sml::aux::get_type_name<TAction> ());
   }
 
   template <class SM, class TSrcState, class TDstState>
   void
-  log_state_change (const TSrcState &src, const TDstState &dst)
+  log_state_change (TSrcState const &src, TDstState const &dst)
   {
     printf ("[%s][transition]\t  '%s' -> '%s'\n", boost::sml::aux::get_type_name<SM> (), src.c_str (), dst.c_str ());
   }
@@ -102,7 +104,7 @@ struct LogicStateMachine::StateMachineWrapper
 };
 
 void // has to be after YourClass::StateMachineWrapper definition
-LogicStateMachine::StateMachineWrapperDeleter::operator() (const StateMachineWrapper *p) const
+LogicStateMachine::StateMachineWrapperDeleter::operator() (StateMachineWrapper const *p) const
 {
   delete p;
 }
@@ -110,18 +112,18 @@ LogicStateMachine::StateMachineWrapperDeleter::operator() (const StateMachineWra
 LogicStateMachine::LogicStateMachine () : sm { new StateMachineWrapper { this, LogicStateMachineDependencies {} } } {}
 
 std::optional<std::string>
-LogicStateMachine::processEvent (const std::string &event)
+LogicStateMachine::processEvent (std::string const &event)
 {
   {
-    std::vector<std::string> SplitMessage {};
-    split (SplitMessage, event, boost::is_any_of ("|"));
+    std::vector<std::string> splitMessage {};
+    split (splitMessage, event, boost::is_any_of ("|"));
     auto result = std::optional<std::string> {};
-    if (SplitMessage.size () == 2)
+    if (splitMessage.size () == 2)
       {
-        const auto &typeToSearch = SplitMessage.at (0);
-        const auto &objectAsString = SplitMessage.at (1);
+        auto const &typeToSearch = splitMessage.at (0);
+        auto const &objectAsString = splitMessage.at (1);
         bool typeFound = false;
-        boost::hana::for_each (user_matchmaking::userMatchmaking, [&] (const auto &x) {
+        boost::hana::for_each (user_matchmaking::userMatchmaking, [&] (auto const &x) {
           if (typeToSearch == confu_json::type_name<std::decay_t<decltype (x)> > ())
             {
               typeFound = true;
