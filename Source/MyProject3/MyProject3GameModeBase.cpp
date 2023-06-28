@@ -29,9 +29,33 @@
 
 using CoroTimer = boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::basic_waitable_timer<boost::asio::chrono::system_clock> >;
 using Websocket = boost::beast::websocket::stream<boost::asio::use_awaitable_t<>::as_default_on_t<boost::beast::tcp_stream> >;
+using SSLWebsocket = boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream> >;
 
 boost::asio::awaitable<void>
-connectToModernDurak (boost::asio::io_context &ioContext, std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {})
+processMessage (FString &helloWorld, std::shared_ptr<SSLWebsocket> &connection, std::optional<std::string> const &connectionName, std::vector<std::string> const &sendMessageBeforeStartRead)
+{
+  using namespace boost::asio;
+  using namespace boost::beast;
+  static size_t id = 0;
+  auto myWebsocket = std::make_shared<MyWebsocket<SSLWebsocket> > (MyWebsocket<SSLWebsocket> { std::move (connection), connectionName ? connectionName.value () : std::string { "connectWebsocket" }, fg (fmt::color::chocolate), std::to_string (id++) });
+  for (auto &&message : sendMessageBeforeStartRead)
+    {
+      co_await myWebsocket->async_write_one_message (std::move (message));
+    }
+  using namespace experimental::awaitable_operators;
+  auto logicStateMachine = LogicStateMachine {};
+  co_await (myWebsocket->readLoop ([&logicStateMachine, &helloWorld] (std::string const &msg) {
+    helloWorld = msg.c_str ();
+    UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString { msg.c_str () });
+    if (auto error = logicStateMachine.processEvent (msg))
+      {
+        UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString { error->c_str () });
+      }
+  }) && myWebsocket->writeLoop ());
+}
+
+boost::asio::awaitable<void>
+AMyProject3GameModeBase::connectToModernDurak (std::vector<std::string> sendMessageBeforeStartRead, std::optional<std::string> connectionName)
 {
   try
     {
@@ -39,7 +63,6 @@ connectToModernDurak (boost::asio::io_context &ioContext, std::vector<std::strin
       using namespace boost::beast;
       try
         {
-          using SSLWebsocket = websocket::stream<ssl_stream<tcp_stream> >;
           ssl::context ctx { ssl::context::tlsv12_client };
           auto address = std::string { "www.modern-durak.com" };
           auto connection = std::make_shared<SSLWebsocket> (SSLWebsocket { ioContext, ctx });
@@ -53,35 +76,21 @@ connectToModernDurak (boost::asio::io_context &ioContext, std::vector<std::strin
           co_await get_lowest_layer (*connection).async_connect (*endpoint_iterator, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint_iterator->endpoint ().address ().to_string () + ":" + std::to_string (endpoint_iterator->endpoint ().port ()), "/wss", use_awaitable);
-          static size_t id = 0;
-          auto myWebsocket = std::make_shared<MyWebsocket<SSLWebsocket> > (MyWebsocket<SSLWebsocket> { std::move (connection), connectionName ? connectionName.value () : std::string { "connectWebsocket" }, fg (fmt::color::chocolate), std::to_string (id++) });
-          for (auto message : sendMessageBeforeStartRead)
-            {
-              co_await myWebsocket->async_write_one_message (message);
-            }
-          using namespace experimental::awaitable_operators;
-          auto logicStateMachine = LogicStateMachine {};
-          co_await (myWebsocket->readLoop ([&logicStateMachine] (std::string const &msg) {
-            UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString { msg.c_str () });
-            if (auto error = logicStateMachine.processEvent (msg))
-              {
-                UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString { error->c_str () });
-              }
-          }) && myWebsocket->writeLoop ());
+          co_await processMessage (helloWorld, connection, connectionName, sendMessageBeforeStartRead);
         }
       catch (std::exception const &e)
         {
-          UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString { e.what () });
+          UE_LOG (LogTemp, Error, TEXT ("Exception : %s"), *FString { e.what () });
         }
     }
   catch (std::exception const &e)
     {
-      UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString { e.what () });
+      UE_LOG (LogTemp, Error, TEXT ("Exception : %s"), *FString { e.what () });
     }
 }
 
 boost::asio::awaitable<void>
-connectToLocalWebsocket (boost::asio::io_context &ioContext, std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {})
+AMyProject3GameModeBase::connectToLocalWebsocket (std::vector<std::string> sendMessageBeforeStartRead, std::optional<std::string> connectionName)
 {
   try
     {
@@ -89,11 +98,8 @@ connectToLocalWebsocket (boost::asio::io_context &ioContext, std::vector<std::st
       using namespace boost::beast;
       try
         {
-          using SSLWebsocket = websocket::stream<ssl_stream<tcp_stream> >;
           ssl::context ctx { ssl::context::tlsv12_client };
-          auto address = std::string {};
           ctx.set_verify_mode (ssl::verify_none); // DO NOT USE THIS IN PRODUCTION THIS WILL IGNORE CHECKING FOR TRUSTFUL CERTIFICATE
-          address = std::string { "localhost:55555" };
           auto connection = std::make_shared<SSLWebsocket> (SSLWebsocket { ioContext, ctx });
           get_lowest_layer (*connection).expires_never ();
           connection->set_option (websocket::stream_base::timeout::suggested (role_type::client));
@@ -103,30 +109,16 @@ connectToLocalWebsocket (boost::asio::io_context &ioContext, std::vector<std::st
           co_await get_lowest_layer (*connection).async_connect (endpoint, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint.address ().to_string () + ":" + std::to_string (endpoint.port ()), "/", use_awaitable);
-          static size_t id = 0;
-          auto myWebsocket = std::make_shared<MyWebsocket<SSLWebsocket> > (MyWebsocket<SSLWebsocket> { std::move (connection), connectionName ? connectionName.value () : std::string { "connectWebsocket" }, fg (fmt::color::chocolate), std::to_string (id++) });
-          for (auto message : sendMessageBeforeStartRead)
-            {
-              co_await myWebsocket->async_write_one_message (message);
-            }
-          using namespace experimental::awaitable_operators;
-          auto logicStateMachine = LogicStateMachine {};
-          co_await (myWebsocket->readLoop ([&logicStateMachine] (std::string const &msg) {
-            UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString { msg.c_str () });
-            if (auto error = logicStateMachine.processEvent (msg))
-              {
-                UE_LOG (LogTemp, Error, TEXT ("errorHandleMessageFromGame: %s"), *FString { error->c_str () });
-              }
-          }) && myWebsocket->writeLoop ());
+          co_await processMessage (helloWorld, connection, connectionName, sendMessageBeforeStartRead);
         }
       catch (std::exception const &e)
         {
-          UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString { e.what () });
+          UE_LOG (LogTemp, Error, TEXT ("Exception : %s"), *FString { e.what () });
         }
     }
   catch (std::exception const &e)
     {
-      UE_LOG (LogTemp, Error, TEXT ("connectWebsocketSSL () connect  Exception : %s"), *FString { e.what () });
+      UE_LOG (LogTemp, Error, TEXT ("Exception : %s"), *FString { e.what () });
     }
 }
 
@@ -171,11 +163,11 @@ AMyProject3GameModeBase::BeginPlay ()
   auto isLocalWebsocket = false;
   if (isLocalWebsocket)
     {
-      co_spawn (ioContext, connectToLocalWebsocket (ioContext, sendMessageBeforeStartRead, "test"), printException);
+      co_spawn (ioContext, connectToLocalWebsocket (sendMessageBeforeStartRead, "test"), printException);
     }
   else
     {
-      co_spawn (ioContext, connectToModernDurak (ioContext, sendMessageBeforeStartRead, "test"), printException);
+      co_spawn (ioContext, connectToModernDurak (sendMessageBeforeStartRead, "test"), printException);
     }
 }
 
