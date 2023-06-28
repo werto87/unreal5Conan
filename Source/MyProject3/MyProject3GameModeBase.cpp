@@ -19,7 +19,6 @@
 #include <boost/certify/https_verification.hpp>
 #include <boost/json/src.hpp> //ONLY ONCE IN PROJECT
 #include <chrono>
-#include <confu_json/confu_json.hxx>
 #include <exception>
 #include <login_matchmaking_game_shared_type/userMatchmakingSerialization.hxx>
 //
@@ -64,15 +63,15 @@ AMyProject3GameModeBase::connectToModernDurak (std::vector<std::string> sendMess
       try
         {
           ssl::context ctx { ssl::context::tlsv12_client };
-          auto address = std::string { "www.modern-durak.com" };
+          auto const address = std::string { "www.modern-durak.com" };
           auto connection = std::make_shared<SSLWebsocket> (SSLWebsocket { ioContext, ctx });
           get_lowest_layer (*connection).expires_never ();
           connection->set_option (websocket::stream_base::timeout::suggested (role_type::client));
           connection->set_option (websocket::stream_base::decorator ([] (websocket::request_type &req) { req.set (http::field::user_agent, std::string (BOOST_BEAST_VERSION_STRING) + " websocket-client-async-ssl"); }));
           using ip::tcp;
-          tcp::resolver::query myQuery (address, "https");
+          const tcp::resolver::query myQuery (address, "https");
           tcp::resolver resolver { ioContext };
-          tcp::resolver::iterator endpoint_iterator = resolver.resolve (myQuery);
+          const tcp::resolver::iterator endpoint_iterator = resolver.resolve (myQuery);
           co_await get_lowest_layer (*connection).async_connect (*endpoint_iterator, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint_iterator->endpoint ().address ().to_string () + ":" + std::to_string (endpoint_iterator->endpoint ().port ()), "/wss", use_awaitable);
