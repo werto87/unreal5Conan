@@ -10,6 +10,7 @@
 #include "Logging/LogMacros.h"
 #include "logic/LogicStateMachine.h"
 #include "util/myWebsocket.hxx"
+#include "util/util.h"
 #include <boost/asio.hpp>
 #include <boost/asio/experimental/awaitable_operators.hpp>
 #include <boost/asio/io_context.hpp>
@@ -29,6 +30,8 @@
 using CoroTimer = boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::basic_waitable_timer<boost::asio::chrono::system_clock> >;
 using Websocket = boost::beast::websocket::stream<boost::asio::use_awaitable_t<>::as_default_on_t<boost::beast::tcp_stream> >;
 using SSLWebsocket = boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream> >;
+
+AMyProject3GameModeBase::AMyProject3GameModeBase () { PrimaryActorTick.bCanEverTick = true; }
 
 boost::asio::awaitable<void>
 processMessage (FString &helloWorld, std::shared_ptr<SSLWebsocket> &connection, std::optional<std::string> const &connectionName, std::vector<std::string> const &sendMessageBeforeStartRead)
@@ -121,37 +124,6 @@ AMyProject3GameModeBase::connectToLocalWebsocket (std::vector<std::string> sendM
     }
 }
 
-void
-printExceptionHelper (std::exception_ptr eptr)
-{
-  try
-    {
-      if (eptr)
-        {
-          std::rethrow_exception (eptr);
-        }
-    }
-  catch (std::exception const &e)
-    {
-      UE_LOG (LogTemp, Error, TEXT ("co_spawn exception: %s"), *FString { e.what () });
-    }
-}
-
-template <class... Fs> struct overloaded : Fs...
-{
-  using Fs::operator()...;
-};
-
-template <class... Fs> overloaded (Fs...) -> overloaded<Fs...>;
-
-auto const printException1 = [] (std::exception_ptr eptr) { printExceptionHelper (eptr); };
-
-auto const printException2 = [] (std::exception_ptr eptr, auto) { printExceptionHelper (eptr); };
-
-auto const printException = overloaded { printException1, printException2 };
-
-AMyProject3GameModeBase::AMyProject3GameModeBase () { PrimaryActorTick.bCanEverTick = true; }
-
 // Called when the game starts or when spawned
 void
 AMyProject3GameModeBase::BeginPlay ()
@@ -159,15 +131,11 @@ AMyProject3GameModeBase::BeginPlay ()
   Super::BeginPlay ();
   using namespace boost::asio;
   auto sendMessageBeforeStartRead = std::vector<std::string> { { "LoginAsGuest|{}" } };
-  auto isLocalWebsocket = false;
-  if (isLocalWebsocket)
-    {
-      co_spawn (ioContext, connectToLocalWebsocket (sendMessageBeforeStartRead, "test"), printException);
-    }
-  else
-    {
-      co_spawn (ioContext, connectToModernDurak (sendMessageBeforeStartRead, "test"), printException);
-    }
+#ifdef RUN_AGAINST_REMOTE
+  co_spawn (ioContext, connectToModernDurak (sendMessageBeforeStartRead, "test"), printException);
+#else
+  co_spawn (ioContext, connectToLocalWebsocket (sendMessageBeforeStartRead, "test"), printException);
+#endif
 }
 
 void
