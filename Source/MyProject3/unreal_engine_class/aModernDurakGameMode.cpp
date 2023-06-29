@@ -1,16 +1,23 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "MyProject3GameModeBase.h"
+#include "aModernDurakGameMode.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
 
-#include "UnrealMacroNuke/UndefineMacros_UE_5.1.0.h"
+#include "MyProject3/unreal_engine_class/aModernDurakGameState.h"
+
+/*
+ *
+ */
+#include "MyProject3/UnrealMacroNuke/UndefineMacros_UE_5.1.0.h"
 //
 #include "Logging/LogMacros.h"
-#include "logic/LogicStateMachine.h"
-#include "util/myWebsocket.hxx"
-#include "util/util.h"
+#include "MyProject3/logic/LogicStateMachine.h"
+
+#include "MyProject3/util/myWebsocket.h"
+#include "MyProject3/util/util.h"
+
 #include <boost/asio.hpp>
 #include <boost/asio/experimental/awaitable_operators.hpp>
 #include <boost/asio/io_context.hpp>
@@ -23,7 +30,7 @@
 #include <exception>
 #include <login_matchmaking_game_shared_type/userMatchmakingSerialization.hxx>
 //
-#include "UnrealMacroNuke/RedefineMacros_UE_5.1.0.h"
+#include "MyProject3/UnrealMacroNuke/RedefineMacros_UE_5.1.0.h"
 
 #pragma clang diagnostic pop
 
@@ -31,7 +38,7 @@ using CoroTimer = boost::asio::use_awaitable_t<>::as_default_on_t<boost::asio::b
 using Websocket = boost::beast::websocket::stream<boost::asio::use_awaitable_t<>::as_default_on_t<boost::beast::tcp_stream> >;
 using SSLWebsocket = boost::beast::websocket::stream<boost::beast::ssl_stream<boost::beast::tcp_stream> >;
 
-AMyProject3GameModeBase::AMyProject3GameModeBase () { PrimaryActorTick.bCanEverTick = true; }
+AModernDurakGameMode::AModernDurakGameMode () { PrimaryActorTick.bCanEverTick = true; }
 
 boost::asio::awaitable<void>
 processMessage (FString &helloWorld, std::shared_ptr<SSLWebsocket> &connection, std::optional<std::string> const &connectionName, std::vector<std::string> const &sendMessageBeforeStartRead)
@@ -57,7 +64,7 @@ processMessage (FString &helloWorld, std::shared_ptr<SSLWebsocket> &connection, 
 }
 
 boost::asio::awaitable<void>
-AMyProject3GameModeBase::connectToModernDurak (std::vector<std::string> sendMessageBeforeStartRead, std::optional<std::string> connectionName)
+AModernDurakGameMode::connectToModernDurak (std::vector<std::string> sendMessageBeforeStartRead, std::optional<std::string> connectionName)
 {
   try
     {
@@ -78,7 +85,7 @@ AMyProject3GameModeBase::connectToModernDurak (std::vector<std::string> sendMess
           co_await get_lowest_layer (*connection).async_connect (*endpoint_iterator, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint_iterator->endpoint ().address ().to_string () + ":" + std::to_string (endpoint_iterator->endpoint ().port ()), "/wss", use_awaitable);
-          co_await processMessage (helloWorld, connection, connectionName, sendMessageBeforeStartRead);
+          co_await processMessage (GetGameState<AModernDurakGameState> ()->lastMessageFromRemote, connection, connectionName, sendMessageBeforeStartRead);
         }
       catch (std::exception const &e)
         {
@@ -92,7 +99,7 @@ AMyProject3GameModeBase::connectToModernDurak (std::vector<std::string> sendMess
 }
 
 boost::asio::awaitable<void>
-AMyProject3GameModeBase::connectToLocalWebsocket (std::vector<std::string> sendMessageBeforeStartRead, std::optional<std::string> connectionName)
+AModernDurakGameMode::connectToLocalWebsocket (std::vector<std::string> sendMessageBeforeStartRead, std::optional<std::string> connectionName)
 {
   try
     {
@@ -111,7 +118,7 @@ AMyProject3GameModeBase::connectToLocalWebsocket (std::vector<std::string> sendM
           co_await get_lowest_layer (*connection).async_connect (endpoint, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint.address ().to_string () + ":" + std::to_string (endpoint.port ()), "/", use_awaitable);
-          co_await processMessage (helloWorld, connection, connectionName, sendMessageBeforeStartRead);
+          co_await processMessage (GetGameState<AModernDurakGameState> ()->lastMessageFromRemote, connection, connectionName, sendMessageBeforeStartRead);
         }
       catch (std::exception const &e)
         {
@@ -126,7 +133,7 @@ AMyProject3GameModeBase::connectToLocalWebsocket (std::vector<std::string> sendM
 
 // Called when the game starts or when spawned
 void
-AMyProject3GameModeBase::BeginPlay ()
+AModernDurakGameMode::BeginPlay ()
 {
   Super::BeginPlay ();
   using namespace boost::asio;
@@ -139,9 +146,8 @@ AMyProject3GameModeBase::BeginPlay ()
 }
 
 void
-AMyProject3GameModeBase::Tick (float DeltaSeconds)
+AModernDurakGameMode::Tick (float DeltaSeconds)
 {
-
   Super::Tick (DeltaSeconds);
   ioContext.poll_one ();
 }

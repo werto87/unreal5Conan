@@ -10,7 +10,7 @@ public class MyProject3 : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		bEnableExceptions = true;
 		PublicDependencyModuleNames.AddRange(new[]
-			{ "MyBoilerplateModule", "Core", "CoreUObject", "Engine", "InputCore" });
+			{ "MyBoilerplateModule", "Core", "CoreUObject", "Engine", "InputCore", "UMG" });
 		PrivateDependencyModuleNames.AddRange(new string[] { });
 		var type = Target.GetType();
 		var innerField = type.GetField("Inner", BindingFlags.Instance | BindingFlags.NonPublic);
