@@ -13,6 +13,7 @@
  *
  */
 #include "aModernDurakGameMode.generated.h"
+
 UCLASS ()
 class MYPROJECT3_API AModernDurakGameMode : public AGameModeBase
 {
@@ -25,6 +26,5 @@ public:
 private:
   boost::asio::awaitable<void> connectToModernDurak (std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {});
   boost::asio::awaitable<void> connectToLocalWebsocket (std::vector<std::string> sendMessageBeforeStartRead = {}, std::optional<std::string> connectionName = {});
-
   boost::asio::io_context ioContext {};
 };

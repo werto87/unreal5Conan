@@ -41,7 +41,7 @@ using SSLWebsocket = boost::beast::websocket::stream<boost::beast::ssl_stream<bo
 AModernDurakGameMode::AModernDurakGameMode () { PrimaryActorTick.bCanEverTick = true; }
 
 boost::asio::awaitable<void>
-processMessage (FString &helloWorld, std::shared_ptr<SSLWebsocket> &connection, std::optional<std::string> const &connectionName, std::vector<std::string> const &sendMessageBeforeStartRead)
+processMessage (std::function<void (FString const &message)> onMessage, std::shared_ptr<SSLWebsocket> &connection, std::optional<std::string> const &connectionName, std::vector<std::string> const &sendMessageBeforeStartRead)
 {
   using namespace boost::asio;
   using namespace boost::beast;
@@ -53,8 +53,8 @@ processMessage (FString &helloWorld, std::shared_ptr<SSLWebsocket> &connection, 
     }
   using namespace experimental::awaitable_operators;
   auto logicStateMachine = LogicStateMachine {};
-  co_await (myWebsocket->readLoop ([&logicStateMachine, &helloWorld] (std::string const &msg) {
-    helloWorld = msg.c_str ();
+  co_await (myWebsocket->readLoop ([&logicStateMachine, onMessage] (std::string const &msg) {
+    onMessage (msg.c_str ());
     UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString { msg.c_str () });
     if (auto error = logicStateMachine.processEvent (msg))
       {
@@ -85,7 +85,7 @@ AModernDurakGameMode::connectToModernDurak (std::vector<std::string> sendMessage
           co_await get_lowest_layer (*connection).async_connect (*endpoint_iterator, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint_iterator->endpoint ().address ().to_string () + ":" + std::to_string (endpoint_iterator->endpoint ().port ()), "/wss", use_awaitable);
-          co_await processMessage (GetGameState<AModernDurakGameState> ()->lastMessageFromRemote, connection, connectionName, sendMessageBeforeStartRead);
+          co_await processMessage ([this] (FString const &message) { GetGameState<AModernDurakGameState> ()->newMessageFromRemote.Broadcast (message); }, connection, connectionName, sendMessageBeforeStartRead);
         }
       catch (std::exception const &e)
         {
@@ -118,7 +118,7 @@ AModernDurakGameMode::connectToLocalWebsocket (std::vector<std::string> sendMess
           co_await get_lowest_layer (*connection).async_connect (endpoint, use_awaitable);
           co_await connection->next_layer ().async_handshake (ssl::stream_base::client, use_awaitable);
           co_await connection->async_handshake (endpoint.address ().to_string () + ":" + std::to_string (endpoint.port ()), "/", use_awaitable);
-          co_await processMessage (GetGameState<AModernDurakGameState> ()->lastMessageFromRemote, connection, connectionName, sendMessageBeforeStartRead);
+          co_await processMessage ([this] (FString const &message) { GetGameState<AModernDurakGameState> ()->newMessageFromRemote.Broadcast (message); }, connection, connectionName, sendMessageBeforeStartRead);
         }
       catch (std::exception const &e)
         {
