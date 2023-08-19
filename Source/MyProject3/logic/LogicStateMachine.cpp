@@ -21,11 +21,12 @@
 
 auto const loginAsGuestSuccess = [] (user_matchmaking::LoginAsGuestSuccess const &loginAsGuestSuccess, LogicStateMachineDependencies &logicStateMachineDependencies) { logicStateMachineDependencies.onMessage (loginAsGuestSuccess.accountName.c_str ()); };
 
-struct SomeState
-{
-};
+// TODO fix the naming of
+//  SomeState what state is the statemachine when starting? Maybe wait for login?
+//  change this class name it says not much
+//  change the class name of LogicStateMachineDependencies
 
-struct SomeEvent
+struct SomeState
 {
 };
 
