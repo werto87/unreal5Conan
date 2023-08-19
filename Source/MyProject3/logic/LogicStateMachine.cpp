@@ -19,13 +19,7 @@
 
 #pragma clang diagnostic pop
 
-struct LogicStateMachineDependencies
-{
-  // UPROPERTY (VisibleAnywhere, BlueprintReadOnly)
-  std::string helloWorld { "Hello World" };
-};
-
-auto const SomeAction = [] () {};
+auto const loginAsGuestSuccess = [] (user_matchmaking::LoginAsGuestSuccess const &loginAsGuestSuccess, LogicStateMachineDependencies &logicStateMachineDependencies) { logicStateMachineDependencies.onMessage (loginAsGuestSuccess.accountName.c_str ()); };
 
 struct SomeState
 {
@@ -42,10 +36,12 @@ public:
   operator() () const noexcept
   {
     using namespace boost::sml;
+    namespace u_m = user_matchmaking;
     // clang-format off
+    
     return make_transition_table (
   // Default-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-* state<SomeState>                         + event<SomeEvent>                             / SomeAction
+* state<SomeState>                         + event<u_m::LoginAsGuestSuccess>                             / loginAsGuestSuccess
       );
   }
 };
@@ -109,7 +105,7 @@ LogicStateMachine::StateMachineWrapperDeleter::operator() (StateMachineWrapper c
   delete p;
 }
 
-LogicStateMachine::LogicStateMachine () : sm { new StateMachineWrapper { this, LogicStateMachineDependencies {} } } {}
+LogicStateMachine::LogicStateMachine (LogicStateMachineDependencies const &logicStateMachineDependencies) : sm { new StateMachineWrapper { this, logicStateMachineDependencies } } {}
 
 std::optional<std::string>
 LogicStateMachine::processEvent (std::string const &event)

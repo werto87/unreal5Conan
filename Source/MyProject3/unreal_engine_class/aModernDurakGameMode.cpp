@@ -52,9 +52,8 @@ processMessage (std::function<void (FString const &message)> onMessage, std::sha
       co_await myWebsocket->async_write_one_message (std::move (message));
     }
   using namespace experimental::awaitable_operators;
-  auto logicStateMachine = LogicStateMachine {};
-  co_await (myWebsocket->readLoop ([&logicStateMachine, onMessage] (std::string const &msg) {
-    onMessage (msg.c_str ());
+  auto logicStateMachine = LogicStateMachine { LogicStateMachineDependencies { onMessage } };
+  co_await (myWebsocket->readLoop ([&logicStateMachine] (std::string const &msg) {
     UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString { msg.c_str () });
     if (auto error = logicStateMachine.processEvent (msg))
       {
