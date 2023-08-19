@@ -25,6 +25,7 @@ auto const loginAsGuestSuccess = [] (user_matchmaking::LoginAsGuestSuccess const
 //  SomeState what state is the statemachine when starting? Maybe wait for login?
 //  change this class name it says not much
 //  change the class name of LogicStateMachineDependencies
+//  TODO add more logic check the modern durk web client and call everything to start a game
 
 struct SomeState
 {
