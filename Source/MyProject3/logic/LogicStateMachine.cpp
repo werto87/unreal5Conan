@@ -21,13 +21,13 @@
 
 auto const createGame = [] (user_matchmaking::LoginAsGuestSuccess const &loginAsGuestSuccess, LogicStateMachineDependencies &logicStateMachineDependencies) {
   //
-  // TODO create the game
+  //  TODO add more logic check the modern durak web client and call everything to start a game
 };
 
 // TODO fix the naming of
 //  change this class name it says not much
 //  change the class name of LogicStateMachineDependencies
-//  TODO add more logic check the modern durak web client and call everything to start a game
+
 // TODO add the durak types from shared game server durak library
 struct NotInGame
 {
