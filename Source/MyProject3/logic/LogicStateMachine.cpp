@@ -19,15 +19,20 @@
 
 #pragma clang diagnostic pop
 
-auto const loginAsGuestSuccess = [] (user_matchmaking::LoginAsGuestSuccess const &loginAsGuestSuccess, LogicStateMachineDependencies &logicStateMachineDependencies) { logicStateMachineDependencies.onMessage (loginAsGuestSuccess.accountName.c_str ()); };
+auto const createGame = [] (user_matchmaking::LoginAsGuestSuccess const &loginAsGuestSuccess, LogicStateMachineDependencies &logicStateMachineDependencies) {
+  //
+  // TODO create the game
+};
 
 // TODO fix the naming of
-//  SomeState what state is the statemachine when starting? Maybe wait for login?
 //  change this class name it says not much
 //  change the class name of LogicStateMachineDependencies
-//  TODO add more logic check the modern durk web client and call everything to start a game
-
-struct SomeState
+//  TODO add more logic check the modern durak web client and call everything to start a game
+// TODO add the durak types from shared game server durak library
+struct NotInGame
+{
+};
+struct InGame
 {
 };
 
@@ -40,10 +45,28 @@ public:
     using namespace boost::sml;
     namespace u_m = user_matchmaking;
     // clang-format off
-    
     return make_transition_table (
   // Default-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-* state<SomeState>                         + event<u_m::LoginAsGuestSuccess>                             / loginAsGuestSuccess
+* state<NotInGame>                         + event<u_m::LoginAsGuestSuccess>                             / createGame  = state<InGame>
+ // ,state<InGame>                            + event<HAS_TO_BE_NAMED::DurakGameOverWon>                             /  durakGameOverWon
+ // ,state<InGame>                            + event<HAS_TO_BE_NAMED::DurakGameOverLose>                             / durakGameOverLose
+ // ,state<InGame>                            + event<HAS_TO_BE_NAMED::DurakGameOverDraw>                             / durakGameOverDraw
+ // ,state<InGame>                            + event<HAS_TO_BE_NAMED::GameData>                             / gameData
+ // ,state<InGame>                            + event<HAS_TO_BE_NAMED::DurakAllowedMoves>                             / durakAllowedMoves
+ // ,state<InGame>                            + event<HAS_TO_BE_NAMED::DurakAskDefendWantToTakeCards>                             / durakAskDefendWantToTakeCards
+ // ,state<InGame>                            + event<HAS_TO_BE_NAMED::DurakTimers>                             / durakTimers
+ // ,state<InGame>                            + event<HAS_TO_BE_NAMED::DurakDefendWantsToTakeCardsFromTableDoYouWantToAddCards>                             / durakDefendWantsToTakeCardsFromTableDoYouWantToAddCards
+
+ /*
+            
+            
+            
+            
+            
+            
+            
+            
+ */
       );
   }
 };
@@ -121,6 +144,8 @@ LogicStateMachine::processEvent (std::string const &event)
         auto const &typeToSearch = splitMessage.at (0);
         auto const &objectAsString = splitMessage.at (1);
         bool typeFound = false;
+        // TODO this only goes over user match making but we are interested in the types from game
+        // TODO make ths types from example of game server into a library and use them here
         boost::hana::for_each (user_matchmaking::userMatchmaking, [&] (auto const &x) {
           if (typeToSearch == confu_json::type_name<std::decay_t<decltype (x)> > ())
             {
