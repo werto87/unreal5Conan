@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LogicStateMachineDependencies.h"
+#include "GameDependencies.h"
 
 #include <memory>
 #include <optional>
@@ -10,7 +10,7 @@ class io_context;
 class thread_pool;
 }
 class Matchmaking;
-class LogicStateMachine
+class GameLogicStateMachine
 {
   struct StateMachineWrapper;
   struct StateMachineWrapperDeleter
@@ -19,7 +19,7 @@ class LogicStateMachine
   };
 
 public:
-  LogicStateMachine (LogicStateMachineDependencies const &logicStateMachineDependencies);
+  GameLogicStateMachine (LogicStateMachineDependencies const &logicStateMachineDependencies);
 
   std::optional<std::string> processEvent (std::string const &event);
 

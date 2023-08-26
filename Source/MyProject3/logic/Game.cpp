@@ -1,4 +1,4 @@
-#include "LogicStateMachine.h"
+#include "Game.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
@@ -23,10 +23,6 @@ auto const createGame = [] (user_matchmaking::LoginAsGuestSuccess const &loginAs
   //
   //  TODO add more logic check the modern durak web client and call everything to start a game
 };
-
-// TODO fix the naming of
-//  change this class name it says not much
-//  change the class name of LogicStateMachineDependencies
 
 // TODO add the durak types from shared game server durak library
 struct NotInGame
@@ -111,9 +107,9 @@ struct my_logger
   }
 };
 
-struct LogicStateMachine::StateMachineWrapper
+struct GameLogicStateMachine::StateMachineWrapper
 {
-  StateMachineWrapper (LogicStateMachine *owner, LogicStateMachineDependencies matchmakingGameDependencies_) : matchmakingGameDependencies { std::move (matchmakingGameDependencies_) }, impl (owner, matchmakingGameDependencies) {}
+  StateMachineWrapper (GameLogicStateMachine *owner, LogicStateMachineDependencies matchmakingGameDependencies_) : matchmakingGameDependencies { std::move (matchmakingGameDependencies_) }, impl (owner, matchmakingGameDependencies) {}
   LogicStateMachineDependencies matchmakingGameDependencies;
 
 #ifdef LOG_FOR_STATE_MACHINE
@@ -125,15 +121,15 @@ struct LogicStateMachine::StateMachineWrapper
 };
 
 void // has to be after YourClass::StateMachineWrapper definition
-LogicStateMachine::StateMachineWrapperDeleter::operator() (StateMachineWrapper const *p) const
+GameLogicStateMachine::StateMachineWrapperDeleter::operator() (StateMachineWrapper const *p) const
 {
   delete p;
 }
 
-LogicStateMachine::LogicStateMachine (LogicStateMachineDependencies const &logicStateMachineDependencies) : sm { new StateMachineWrapper { this, logicStateMachineDependencies } } {}
+GameLogicStateMachine::GameLogicStateMachine (LogicStateMachineDependencies const &logicStateMachineDependencies) : sm { new StateMachineWrapper { this, logicStateMachineDependencies } } {}
 
 std::optional<std::string>
-LogicStateMachine::processEvent (std::string const &event)
+GameLogicStateMachine::processEvent (std::string const &event)
 {
   {
     std::vector<std::string> splitMessage {};

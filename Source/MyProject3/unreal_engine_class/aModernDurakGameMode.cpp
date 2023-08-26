@@ -12,8 +12,9 @@
  */
 #include "MyProject3/UnrealMacroNuke/UndefineMacros_UE_5.1.0.h"
 //
+
 #include "Logging/LogMacros.h"
-#include "MyProject3/logic/LogicStateMachine.h"
+#include "MyProject3/logic/Game.h"
 
 #include "MyProject3/util/myWebsocket.h"
 #include "MyProject3/util/util.h"
@@ -52,7 +53,7 @@ processMessage (std::function<void (FString const &message)> onMessage, std::sha
       co_await myWebsocket->async_write_one_message (std::move (message));
     }
   using namespace experimental::awaitable_operators;
-  auto logicStateMachine = LogicStateMachine { LogicStateMachineDependencies { onMessage } };
+  auto logicStateMachine = GameLogicStateMachine { LogicStateMachineDependencies { onMessage } };
   co_await (myWebsocket->readLoop ([&logicStateMachine] (std::string const &msg) {
     UE_LOG (LogTemp, Warning, TEXT ("message from matchmaking: %s"), *FString { msg.c_str () });
     if (auto error = logicStateMachine.processEvent (msg))
