@@ -1,6 +1,6 @@
 # unreal5Conan
 
-build notes:
+build notes:  
 this project is dependend on adamrehn docker image to create boilerplate to alow the usage of conan with unreal engine
 1.  instal ue4-docker from pip
 2.  limit nofile in docker container  
