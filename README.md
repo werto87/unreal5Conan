@@ -19,6 +19,7 @@ this project is dependent on adamrehn docker image to create boilerplate to allo
     		}
     	}
     }
-3. Create the docker image "ue4-docker build  --ue-version 5.2.1-1 --target full  -v &> output.log"
+3. Create the docker image "ue4-docker build  --ue-version 5.2.1-1 --target full  -v &> output.log" (replace 5.2.1-1 with your desired version)
 4. if it fails, check this issue "https://github.com/adamrehn/conan-ue4cli/issues/20#issue-1465100084"
+
 
