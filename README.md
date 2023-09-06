@@ -1,11 +1,11 @@
 # unreal5Conan
 
 build notes:  
-this project is dependend on adamrehn docker image to create boilerplate to alow the usage of conan with unreal engine
-1.  instal ue4-docker from pip
+this project is dependent on adamrehn docker image to create boilerplate to allow the usage of conan with Unreal Engine
+1.  Install ue4-docker from pip
 2.  limit nofile in docker container  
-  2.1. create the file /etc/docker/daemon.json  
-  2.2. with the content {
+  2.1. Create the file /etc/docker/daemon.json  
+  2.2. With the content {
     	"default-ulimits": {
     		"nofile": {
     			"Name": "nofile",
@@ -19,5 +19,6 @@ this project is dependend on adamrehn docker image to create boilerplate to alow
     		}
     	}
     }
-3. create the docker image "ue4-docker build  --ue-version 5.2.1-1 --target full  -v &> output.log"
-4. if it fails check this issue "https://github.com/adamrehn/conan-ue4cli/issues/20#issue-1465100084"
+3. Create the docker image "ue4-docker build  --ue-version 5.2.1-1 --target full  -v &> output.log"
+4. if it fails, check this issue "https://github.com/adamrehn/conan-ue4cli/issues/20#issue-1465100084"
+
